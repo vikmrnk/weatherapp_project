@@ -1,0 +1,167 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="https://openweathermap.org/img/wn/{{ icon }}.png" type="image/png">
+</head>
+
+<body {% if exception_occurred %}
+    style="background-image: url('https://images.pexels.com/photos/3008509/pexels-photo-3008509.jpeg?auto=compress&cs=tinysrgb&w=1600');" 
+  {% else %}
+  style="background-image: url('{{ image_url }}');"
+  {% endif %}>
+  <div class="container">
+    <h1 class="heading">Weather App</h1>
+    
+    <form method="POST" class="search-form">
+      {% csrf_token %}
+      <div class="search-container">
+        <input type="text" name="city" placeholder="Enter city name" value="{{ city }}">
+        <button type="submit" class="btn"><i class="fas fa-search"></i></button>
+      </div>
+    </form>
+    
+    <!-- Messages Section -->
+    {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Favorite Cities Section -->
+    <div class="favorites-section">
+      <div class="favorites-header">
+        <h3>Favorite Cities</h3>
+        {% if is_favorite %}
+          <form method="POST" class="favorite-form">
+            {% csrf_token %}
+            <input type="hidden" name="remove_favorite" value="{{ city }}">
+            <button type="submit" class="btn btn-remove"><i class="fas fa-heart-broken"></i> Remove from favorites</button>
+          </form>
+        {% else %}
+          <form method="POST" class="favorite-form">
+            {% csrf_token %}
+            <input type="hidden" name="add_favorite" value="{{ city }}">
+            <button type="submit" class="btn btn-add"><i class="fas fa-heart"></i> Add to favorites</button>
+          </form>
+        {% endif %}
+      </div>
+      
+      <div class="favorites-list">
+        {% if favorite_cities %}
+          {% for favorite in favorite_cities %}
+            <form method="POST" class="favorite-item">
+              {% csrf_token %}
+              <input type="hidden" name="city" value="{{ favorite.city_name }}">
+              <button type="submit" class="favorite-btn">{{ favorite.city_name|title }}</button>
+            </form>
+          {% endfor %}
+        {% else %}
+          <p class="no-favorites">No favorite cities yet. Add some!</p>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="current-weather">
+      <div class="weather-main">
+        <div class="left">
+          <h2 class="temp">{{ temp }}&#176; C</h2>
+          <p class="feels-like">Feels like: {{ feels_like }}&#176; C</p>
+          <h2 class="city">{{ city|title }}</h2>
+          <p class="date">{{ day }}</p>
+        </div>
+        <div class="right">
+          <div class="icon">
+            <img src="https://openweathermap.org/img/wn/{{ icon }}@2x.png" alt="{{ description }}">
+          </div>
+          <div class="condition">
+            <p class="description">{{ description|title }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="weather-details">
+        <div class="detail-item">
+          <span class="detail-icon"><i class="fas fa-water"></i></span>
+          <div class="detail-info">
+            <span class="detail-label">Humidity</span>
+            <span class="detail-value">{{ humidity }}%</span>
+          </div>
+        </div>
+        <div class="detail-item">
+          <span class="detail-icon"><i class="fas fa-wind"></i></span>
+          <div class="detail-info">
+            <span class="detail-label">Wind Speed</span>
+            <span class="detail-value">{{ wind_speed }} m/s</span>
+          </div>
+        </div>
+        <div class="detail-item">
+          <span class="detail-icon"><i class="fas fa-compress-alt"></i></span>
+          <div class="detail-info">
+            <span class="detail-label">Pressure</span>
+            <span class="detail-value">{{ pressure }} hPa</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 5-Day Forecast Section -->
+    <div class="forecast-section">
+      <h3>5-Day Forecast</h3>
+      <div class="forecast-container">
+        {% for day in forecast %}
+        <div class="forecast-card">
+          <h4>{{ day.day_name }}</h4>
+          <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" alt="{{ day.description }}">
+          <h5>{{ day.temp }}&#176; C</h5>
+          <p>{{ day.description|title }}</p>
+          <div class="forecast-details">
+            <div class="forecast-detail">
+              <i class="fas fa-water"></i> {{ day.humidity }}%
+            </div>
+            <div class="forecast-detail">
+              <i class="fas fa-wind"></i> {{ day.wind_speed }} m/s
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+{% if exception_occurred %}
+    <div class="error-message">
+      <p><i class="fas fa-exclamation-triangle"></i> Using saved data due to Weather API issues.</p>
+    </div>
+{% endif %}
+
+<footer class="footer">
+  <p>Created by Viktoriia Kamarenko &copy; {% now "Y" %} | <a href="https://github.com/vikmrnk" target="_blank"><i class="fab fa-github"></i> GitHub</a></p>
+</footer>
+
+<script>
+  // Auto-hide messages after 5 seconds
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const messages = document.querySelectorAll('.message');
+      messages.forEach(message => {
+        message.style.opacity = '0';
+        setTimeout(() => message.style.display = 'none', 500);
+      });
+    }, 5000);
+  });
+</script>
+
+</body>
+</html>
